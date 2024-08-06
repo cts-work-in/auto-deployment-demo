@@ -14,36 +14,26 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-
+    
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-
+    
     - run: npm ci
-
+    
     - name: Run Tests
       run: npm test
-
+    
     - name: Set up .env
       run: |
         echo "${{ secrets.PROD_ENV_FILE }}" | base64 --decode > .env
-
+    
     - name: Decode PEM File
       run: |
         echo "${{ secrets.PEM_FILE_BASE64 }}" | base64 --decode > auto-deploy-demo.pem
         chmod 600 auto-deploy-demo.pem
-
-    - name: List Files in Workspace
-      run: ls -la
-
-    - name: Check Directory Structure
-      run: |
-        echo "Current directory:"
-        pwd
-        echo "Listing contents:"
-        ls -la
 
     - name: Backup Current Production Code
       run: |
@@ -64,10 +54,16 @@ jobs:
 
         echo "Backup created at $BACKUP_PATH"
         EOF
-
+    
+    - name: Verify Directory Structure
+      run: |
+        echo "Listing contents of the local directory:"
+        ls -la
+    
     - name: Deploy to Production
       run: |
-        SCP_PATH="./auto-deployment-demo"  # Make sure this path is correct
+        SCP_PATH="./auto-deployment-demo"
+        echo "Using SCP path: $SCP_PATH"
         scp -i 'auto-deploy-demo.pem' -r $SCP_PATH ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com:/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo
 
     - name: Install Dependencies on Production
