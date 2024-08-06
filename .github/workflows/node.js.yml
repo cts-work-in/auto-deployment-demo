@@ -57,7 +57,7 @@ jobs:
     
     - name: Deploy to Production
       run: |
-        scp -i 'auto-deploy-demo.pem' -r .auto-deployment-demo ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com:/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo
+        scp -r . user@production-server:~/actions-runner/_work/auto-deployment-demo/auto-deployment-demo
 
     - name: Install Dependencies on Production
       run: |
