@@ -35,6 +35,16 @@ jobs:
         echo "${{ secrets.PEM_FILE_BASE64 }}" | base64 --decode > auto-deploy-demo.pem
         chmod 600 auto-deploy-demo.pem
 
+    - name: List Files in Workspace
+      run: ls -la
+
+    - name: Check Directory Structure
+      run: |
+        echo "Current directory:"
+        pwd
+        echo "Listing contents:"
+        ls -la
+
     - name: Backup Current Production Code
       run: |
         ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
@@ -57,7 +67,8 @@ jobs:
 
     - name: Deploy to Production
       run: |
-        scp -i 'auto-deploy-demo.pem' -r ./auto-deployment-demo ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com:/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo
+        SCP_PATH="./auto-deployment-demo"  # Make sure this path is correct
+        scp -i 'auto-deploy-demo.pem' -r $SCP_PATH ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com:/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo
 
     - name: Install Dependencies on Production
       run: |
