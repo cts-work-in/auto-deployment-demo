@@ -77,7 +77,7 @@ app.post('/convert', async (req, res) => {
 // mongooseConnection();
 
 // Export the app for testing
-module.exports = app;
+module.exports = apps;
 
 // Only start the server if this file is run directly
 if (require.main === module) {
