@@ -31,79 +31,69 @@ jobs:
         touch .env
         echo "${{ secrets.PROD_ENV_FILE }}" > .env
     
-    # - name: Backup Current Production Code
-    #   run: |
-    #     echo "${{ secrets.PEM_FILE }}" > auto-deploy-demo.pem
-    #     chmod 600 auto-deploy-demo.pem
-    #     ssh -i auto-deploy-demo.pem ubuntu@65.0.193.48 'bash -s' << 'EOF'
-    #     # Define absolute paths
-    #     CURRENT_PRODUCTION="/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo"
-    #     BACKUP_DIR="/home/ubuntu/actions-runner/_work/auto-deployment-demo/backup"
+    - name: Backup Current Production Code
+      run: |
+        ssh -i /home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo/auto-deployment-demo.pem ubuntu@65.0.193.48 'bash -s' << 'EOF'
+        # Define absolute paths
+        CURRENT_PRODUCTION="/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo"
+        BACKUP_DIR="/home/ubuntu/actions-runner/_work/auto-deployment-demo/backup"
 
-    #     # Create the backup directory if it doesn't exist
-    #     mkdir -p $BACKUP_DIR
+        # Create the backup directory if it doesn't exist
+        mkdir -p $BACKUP_DIR
 
-    #     # Create a timestamped backup directory
-    #     TIMESTAMP=$(date +%F-%T)
-    #     BACKUP_PATH="$BACKUP_DIR/production-$TIMESTAMP"
+        # Create a timestamped backup directory
+        TIMESTAMP=$(date +%F-%T)
+        BACKUP_PATH="$BACKUP_DIR/production-$TIMESTAMP"
 
-    #     # Copy current production to the backup directory
-    #     cp -r $CURRENT_PRODUCTION $BACKUP_PATH
+        # Copy current production to the backup directory
+        cp -r $CURRENT_PRODUCTION $BACKUP_PATH
 
-    #     echo "Backup created at $BACKUP_PATH"
-    #     EOF
+        echo "Backup created at $BACKUP_PATH"
+        EOF
     
-    # - name: Deploy to Production
-    #   run: |
-    #     echo "${{ secrets.PEM_FILE }}" > auto-deploy-demo.pem
-    #     chmod 600 auto-deploy-demo.pem
-    #     scp -i auto-deploy-demo.pem -r . ubuntu@65.0.193.48:/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo
+    - name: Deploy to Production
+      run: |
+        scp -i /home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo/auto-deployment-demo.pem -r . ubuntu@65.0.193.48:/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo
 
-    # - name: Install Dependencies on Production
-    #   run: |
-    #     echo "${{ secrets.PEM_FILE }}" > auto-deploy-demo.pem
-    #     chmod 600 auto-deploy-demo.pem
-    #     ssh -i auto-deploy-demo.pem ubuntu@65.0.193.48 'bash -s' << 'EOF'
-    #     cd /home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo
-    #     npm ci
-    #     npm start &  # Run the application in the background
-    #     sleep 10  # Wait for 10 seconds to give the application time to start
-    #     EOF
+    - name: Install Dependencies on Production
+      run: |
+        ssh -i /home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo/auto-deployment-demo.pem ubuntu@65.0.193.48 'bash -s' << 'EOF'
+        cd /home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo
+        npm ci
+        npm start &  # Run the application in the background
+        sleep 10  # Wait for 10 seconds to give the application time to start
+        EOF
 
-    # - name: Monitor Production for Errors
-    #   run: |
-    #     echo "${{ secrets.PEM_FILE }}" > auto-deploy-demo.pem
-    #     chmod 600 auto-deploy-demo.pem
-    #     ssh -i auto-deploy-demo.pem ubuntu@65.0.193.48 'bash -s' << 'EOF'
-    #     # Check application status (replace with actual check)
-    #     if curl -f http://localhost:8000; then
-    #       echo "Deployment successful"
-    #     else
-    #       echo "Deployment failed"
-    #       exit 1
-    #     fi
-    #     EOF
+    - name: Monitor Production for Errors
+      run: |
+        ssh -i /home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo/auto-deployment-demo.pem ubuntu@65.0.193.48 'bash -s' << 'EOF'
+        # Check application status (replace with actual check)
+        if curl -f http://localhost:8000; then
+          echo "Deployment successful"
+        else
+          echo "Deployment failed"
+          exit 1
+        fi
+        EOF
 
-    # - name: Revert to Previous Production Version if Errors Occur
-    #   if: failure()
-    #   run: |
-    #     echo "${{ secrets.PEM_FILE }}" > auto-deploy-demo.pem
-    #     chmod 600 auto-deploy-demo.pem
-    #     ssh -i auto-deploy-demo.pem ubuntu@65.0.193.48 'bash -s' << 'EOF'
-    #     # Define absolute paths
-    #     BACKUP_DIR="/home/ubuntu/actions-runner/_work/auto-deployment-demo/backup"
-    #     CURRENT_PRODUCTION="/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo"
+    - name: Revert to Previous Production Version if Errors Occur
+      if: failure()
+      run: |
+        ssh -i /home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo/auto-deployment-demo.pem ubuntu@65.0.193.48 'bash -s' << 'EOF'
+        # Define absolute paths
+        BACKUP_DIR="/home/ubuntu/actions-runner/_work/auto-deployment-demo/backup"
+        CURRENT_PRODUCTION="/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo"
 
-    #     # Find the latest backup
-    #     latest_backup=$(ls -dt $BACKUP_DIR/production-* | head -1)
+        # Find the latest backup
+        latest_backup=$(ls -dt $BACKUP_DIR/production-* | head -1)
 
-    #     # Revert to the latest backup
-    #     if [ -d "$latest_backup" ]; then
-    #       rm -rf $CURRENT_PRODUCTION
-    #       cp -r "$latest_backup" $CURRENT_PRODUCTION
-    #       echo "Reverted to backup: $latest_backup"
-    #     else
-    #       echo "No backup found to revert to"
-    #       exit 1
-    #     fi
-    #     EOF
+        # Revert to the latest backup
+        if [ -d "$latest_backup" ]; then
+          rm -rf $CURRENT_PRODUCTION
+          cp -r "$latest_backup" $CURRENT_PRODUCTION
+          echo "Reverted to backup: $latest_backup"
+        else
+          echo "No backup found to revert to"
+          exit 1
+        fi
+        EOF
