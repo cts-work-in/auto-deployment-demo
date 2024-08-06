@@ -68,7 +68,7 @@ jobs:
       run: |
         ssh -i "auto-deploy-demo.pem" ubuntu@65.0.193.48 'bash -s' << 'EOF'
         # Check application status (replace with actual check)
-        if curl -f http://localhost:3000; then
+        if curl -f http://localhost:8000; then
           echo "Deployment successful"
         else
           echo "Deployment failed"
