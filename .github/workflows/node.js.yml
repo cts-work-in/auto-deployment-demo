@@ -35,29 +35,11 @@ jobs:
         echo "${{ secrets.PEM_FILE_BASE64 }}" | base64 --decode > auto-deploy-demo.pem
         chmod 600 auto-deploy-demo.pem
 
-    - name: Backup Current Production Code
-      run: |
-        ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
-        # Define absolute paths
-        CURRENT_PRODUCTION="/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo"
-        BACKUP_DIR="/home/ubuntu/actions-runner/_work/auto-deployment-demo/backup"
-
-        # Create the backup directory if it doesn't exist
-        mkdir -p $BACKUP_DIR
-
-        # Create a timestamped backup directory
-        TIMESTAMP=$(date +%F-%T)
-        BACKUP_PATH="$BACKUP_DIR/production-$TIMESTAMP"
-
-        # Copy current production to the backup directory
-        cp -r $CURRENT_PRODUCTION $BACKUP_PATH
-
-        echo "Backup created at $BACKUP_PATH"
-        EOF
-    
     - name: Verify Directory Structure
       run: |
-        echo "Listing contents of the current directory:"
+        echo "Current directory:"
+        pwd
+        echo "Listing contents:"
         ls -la
 
     - name: Upload Artifact for Debugging
@@ -65,6 +47,7 @@ jobs:
       with:
         name: deployment-directory
         path: ./auto-deployment-demo
+        if-no-files-found: warn
 
     - name: Deploy to Production
       run: |
