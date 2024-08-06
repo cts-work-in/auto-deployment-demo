@@ -1,5 +1,5 @@
 name: Node.js CI/CD
- 
+
 on:
   push:
     branches: [ "master" ]
@@ -14,22 +14,22 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    
+
     - run: npm ci
-    
+
     - name: Run Tests
       run: npm test
-    
+
     - name: Set up .env
       run: |
         echo "${{ secrets.PROD_ENV_FILE }}" | base64 --decode > .env
-    
+
     - name: Decode PEM File
       run: |
         echo "${{ secrets.PEM_FILE_BASE64 }}" | base64 --decode > auto-deploy-demo.pem
@@ -54,10 +54,10 @@ jobs:
 
         echo "Backup created at $BACKUP_PATH"
         EOF
-    
+
     - name: Deploy to Production
       run: |
-        scp -r . user@production-server:~/actions-runner/_work/auto-deployment-demo/auto-deployment-demo
+        scp -i 'auto-deploy-demo.pem' -r ./auto-deployment-demo ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com:/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo
 
     - name: Install Dependencies on Production
       run: |
