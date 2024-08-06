@@ -38,7 +38,7 @@ jobs:
 
     - name: Backup Current Production Code
       run: |
-        ssh -i auto-deploy-demo.pem ubuntu@65.0.193.48 'bash -s' << 'EOF'
+        ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
         # Define absolute paths
         CURRENT_PRODUCTION="/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo"
         BACKUP_DIR="/home/ubuntu/actions-runner/_work/auto-deployment-demo/backup"
@@ -58,11 +58,11 @@ jobs:
     
     - name: Deploy to Production
       run: |
-        scp -i auto-deploy-demo.pem -r . ubuntu@65.0.193.48:/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo
+        ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com:/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo
 
     - name: Install Dependencies on Production
       run: |
-        ssh -i auto-deploy-demo.pem ubuntu@65.0.193.48 'bash -s' << 'EOF'
+        ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
         cd /home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo
         npm ci
         npm start &  # Run the application in the background
@@ -71,7 +71,7 @@ jobs:
 
     - name: Monitor Production for Errors
       run: |
-        ssh -i auto-deploy-demo.pem ubuntu@65.0.193.48 'bash -s' << 'EOF'
+       ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
         # Check application status (replace with actual check)
         if curl -f http://localhost:8000; then
           echo "Deployment successful"
@@ -84,7 +84,7 @@ jobs:
     - name: Revert to Previous Production Version if Errors Occur
       if: failure()
       run: |
-        ssh -i auto-deploy-demo.pem ubuntu@65.0.193.48 'bash -s' << 'EOF'
+        ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
         # Define absolute paths
         BACKUP_DIR="/home/ubuntu/actions-runner/_work/auto-deployment-demo/backup"
         CURRENT_PRODUCTION="/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo"
