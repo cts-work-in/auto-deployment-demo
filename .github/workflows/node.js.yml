@@ -60,6 +60,19 @@ jobs:
         echo "Using SCP path: $SCP_PATH"
         scp -i 'auto-deploy-demo.pem' $SCP_PATH ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com:/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo.tar.gz
 
+    - name: Stop Existing Application
+      run: |
+        ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
+        echo "Stopping existing process on port 8000..."
+        PID=$(sudo lsof -t -i:8000)
+        if [ -n "$PID" ]; then
+          sudo kill -9 $PID
+          echo "Killed process $PID"
+        else
+          echo "No process found on port 8000"
+        fi
+        EOF
+
     - name: Install Dependencies on Production
       run: |
         ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
@@ -68,7 +81,7 @@ jobs:
         rm auto-deployment-demo.tar.gz
         cd auto-deployment-demo
         npm ci
-        npm start &  # Run the application in the background
+        PORT=8001 npm start &  # Run the application on a different port
         sleep 10  # Wait for 10 seconds to give the application time to start
         EOF
 
@@ -76,7 +89,7 @@ jobs:
       run: |
         ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
         # Check application status (replace with actual check)
-        if curl -f http://localhost:8000; then
+        if curl -f http://localhost:8001; then
           echo "Deployment successful"
         else
           echo "Deployment failed"
