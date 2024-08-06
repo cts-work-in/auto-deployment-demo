@@ -53,7 +53,10 @@ jobs:
     
     - name: Deploy to Production
       run: |
-        scp -i /home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo/auto-deployment-demo.pem -r . ubuntu@65.0.193.48:/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo
+        ssh -i /home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo/auto-deployment-demo.pem ubuntu@65.0.193.48 'bash -s' << 'EOF'
+        cd /home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo
+        git pull origin master
+        EOF
 
     - name: Install Dependencies on Production
       run: |
