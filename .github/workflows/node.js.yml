@@ -36,6 +36,12 @@ jobs:
         echo "${{ secrets.PEM_FILE_BASE64 }}" | base64 --decode > auto-deploy-demo.pem
         chmod 600 auto-deploy-demo.pem
 
+    - name: Add SSH Host Key
+      run: |
+        mkdir -p ~/.ssh
+        echo "ec2-65-0-193-48.ap-south-1.compute.amazonaws.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDSHptft4SYgzqn3GCx0nXgA5rmK+7iKTATLFkNwlHCi6JWsaVWo7ga64C0vhSW07FzVye3Oqx8myIpXf2sAQLlHhcasCQOLYzIpyFHMR9tbbRbMc3Wj5bavBQ4pTqui6wMjC7CCdfXTLwc0LokPZLWKEvpmBOfI7/1ZZ2bnZWdZM0j6gtJPi+2cK2e6EEYyEbgwL2EYBsjtvrUFHNpILL/OcdFuUbJyEDIvtCXfehVc/rththSWKulB9Bxesc7tNOQbyCxleImC68+aj5ClLK2ChGR91k5UCIRUGweiDJCdlNLVQPrfj0s0DcUbRESSn68xNeLTS1noCf6aP08Wy5FeKeV5vDC2H4RC4INnEgz0Cl7ByO3+5qUmowEGr7BMngrji0r4WVteTYR8ydec8ggqdkDOZkQS3mKvkrb3RZDOI0xRoVPgMcOcAYSPplDFlQwoJEBQmu3wHHx6RrIBlM+pnloNCQ1XLPaJNRHUBOEkGYmYQfu5IihmLUTc/YryNk=" >> ~/.ssh/known_hosts
+        echo "ec2-65-0-193-48.ap-south-1.compute.amazonaws.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBCJWewOKOihd9hVa4AeKDrlJ0/4/qaKf1udIpMX6znXE83K00Ref581PPX5uwYAlrarYWWp9fkhioWIaQ0b04Qg=" >> ~/.ssh/known_hosts
+
     - name: Backup Current Production Code
       run: |
         ssh -i auto-deploy-demo.pem ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
