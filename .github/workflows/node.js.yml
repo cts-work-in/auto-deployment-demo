@@ -57,14 +57,26 @@ jobs:
     
     - name: Verify Directory Structure
       run: |
-        echo "Listing contents of the local directory:"
+        echo "Listing contents of the current directory:"
         ls -la
-    
+
+    - name: Upload Artifact for Debugging
+      uses: actions/upload-artifact@v3
+      with:
+        name: deployment-directory
+        path: ./auto-deployment-demo
+
     - name: Deploy to Production
       run: |
         SCP_PATH="./auto-deployment-demo"
         echo "Using SCP path: $SCP_PATH"
-        scp -i 'auto-deploy-demo.pem' -r $SCP_PATH ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com:/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo
+        if [ -d "$SCP_PATH" ]; then
+          echo "Directory exists. Proceeding with SCP."
+          scp -i 'auto-deploy-demo.pem' -r $SCP_PATH ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com:/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo
+        else
+          echo "Directory does not exist. Please check the path."
+          exit 1
+        fi
 
     - name: Install Dependencies on Production
       run: |
