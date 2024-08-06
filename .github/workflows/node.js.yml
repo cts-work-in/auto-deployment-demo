@@ -14,39 +14,27 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    
+
     - run: npm ci
-    
+
     - name: Set up .env
       run: |
         echo "${{ secrets.PROD_ENV_FILE }}" | base64 --decode > .env
-    
+
     - name: Decode PEM File
       run: |
         echo "${{ secrets.PEM_FILE_BASE64 }}" | base64 --decode > auto-deploy-demo.pem
         chmod 600 auto-deploy-demo.pem
 
-    - name: Verify Directory Structure
-      run: |
-        echo "Current directory:"
-        pwd
-        echo "Listing contents:"
-        ls -la
-
     - name: Create Archive
       run: |
-        echo "Current directory:"
-        pwd
-        echo "Listing contents:"
-        ls -la
-        echo "Attempting to create archive from path: ../auto-deployment-demo"
-        tar -czf auto-deployment-demo.tar.gz ../auto-deployment-demo || { echo "Failed to create archive"; exit 1; }
+        tar -czf auto-deployment-demo.tar.gz . || { echo "Failed to create archive"; exit 1; }
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v3
@@ -56,24 +44,15 @@ jobs:
 
     - name: Deploy to Production
       run: |
-        SCP_PATH="auto-deployment-demo.tar.gz"
-        echo "Using SCP path: $SCP_PATH"
-        scp -i 'auto-deploy-demo.pem' $SCP_PATH ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com:/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo.tar.gz
+        scp -i 'auto-deploy-demo.pem' auto-deployment-demo.tar.gz ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com:/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo.tar.gz
 
     - name: Stop Existing Application
       run: |
         ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
-        echo "Stopping existing process on port 8000..."
-        PID=$(sudo lsof -t -i:8000)
-        if [ -n "$PID" ]; then
-          sudo kill -9 $PID
-          echo "Killed process $PID"
-        else
-          echo "No process found on port 8000"
-        fi
+        sudo lsof -t -i:8000 | xargs -r sudo kill -9
         EOF
 
-    - name: Install Dependencies on Production
+    - name: Deploy Application
       run: |
         ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
         cd /home/ubuntu/actions-runner/_work/auto-deployment-demo
@@ -81,40 +60,21 @@ jobs:
         rm auto-deployment-demo.tar.gz
         cd auto-deployment-demo
         npm ci
-        PORT=8001 npm start &  # Run the application on a different port
-        sleep 10  # Wait for 10 seconds to give the application time to start
+        PORT=8000 npm start &
         EOF
 
-    - name: Monitor Production for Errors
+    - name: Monitor Production
       run: |
         ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
-        # Check application status (replace with actual check)
-        if curl -f http://localhost:8001; then
-          echo "Deployment successful"
-        else
-          echo "Deployment failed"
-          exit 1
-        fi
+        curl -f http://localhost:8000 || exit 1
         EOF
 
-    - name: Revert to Previous Production Version if Errors Occur
+    - name: Revert to Previous Version if Errors Occur
       if: failure()
       run: |
         ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
-        # Define absolute paths
         BACKUP_DIR="/home/ubuntu/actions-runner/_work/auto-deployment-demo/backup"
         CURRENT_PRODUCTION="/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo"
-
-        # Find the latest backup
         latest_backup=$(ls -dt $BACKUP_DIR/production-* | head -1)
-
-        # Revert to the latest backup
-        if [ -d "$latest_backup" ]; then
-          rm -rf $CURRENT_PRODUCTION
-          cp -r "$latest_backup" $CURRENT_PRODUCTION
-          echo "Reverted to backup: $latest_backup"
-        else
-          echo "No backup found to revert to"
-          exit 1
-        fi
+        [ -d "$latest_backup" ] && rm -rf $CURRENT_PRODUCTION && cp -r "$latest_backup" $CURRENT_PRODUCTION || { echo "No backup found"; exit 1; }
         EOF
