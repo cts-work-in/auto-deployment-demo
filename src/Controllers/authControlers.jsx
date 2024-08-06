@@ -4,7 +4,7 @@ const expressAsyncHandler = require("express-async-handler");
 
 exports.Register = expressAsyncHandler(async (req, res) => {
     try {
-        console.log("yha kux b kr skte h")
+        console.log("yha kux b kr ")
     } catch (error) {
         
     }
