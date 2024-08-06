@@ -35,10 +35,9 @@ jobs:
     - name: Create Archive
       run: |
         mkdir temp-deploy
-        cp -r ./* temp-deploy
+        rsync -av --exclude='temp-deploy' ./ temp-deploy/
         tar -czf auto-deployment-demo.tar.gz -C temp-deploy . || { echo "Failed to create archive"; exit 1; }
         rm -rf temp-deploy
-
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v3
@@ -80,5 +79,12 @@ jobs:
         BACKUP_DIR="/home/ubuntu/actions-runner/_work/auto-deployment-demo/backup"
         CURRENT_PRODUCTION="/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo"
         latest_backup=$(ls -dt $BACKUP_DIR/production-* | head -1)
-        [ -d "$latest_backup" ] && rm -rf $CURRENT_PRODUCTION && cp -r "$latest_backup" $CURRENT_PRODUCTION || { echo "No backup found"; exit 1; }
+        if [ -d "$latest_backup" ]; then
+          rm -rf $CURRENT_PRODUCTION
+          cp -r "$latest_backup" $CURRENT_PRODUCTION
+          echo "Reverted to backup: $latest_backup"
+        else
+          echo "No backup found to revert to"
+          exit 1
+        fi
         EOF
