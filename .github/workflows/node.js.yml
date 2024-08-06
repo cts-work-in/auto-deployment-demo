@@ -37,7 +37,7 @@ jobs:
         ssh user@production-server 'bash -s' << 'EOF'
         # Define paths
         CURRENT_PRODUCTION="~/actions-runner/_work/auto-deployment-demo/auto-deployment-demo"
-        BACKUP_DIR="~/actions-runner/_work/auto-deployment-demo/backups"
+        BACKUP_DIR="~/actions-runner/_work/auto-deployment-demo/backup"
 
         # Create a timestamped backup directory
         TIMESTAMP=$(date +%F-%T)
