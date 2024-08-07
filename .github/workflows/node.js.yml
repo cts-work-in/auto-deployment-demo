@@ -63,7 +63,7 @@ jobs:
         rm auto-deployment-demo.tar.gz
         cd auto-deployment-demo
         npm ci
-        pm2 reload 0 || pm2 start index.js  # Use PM2 to reload or start the application
+        PORT=8000 npm start &
         EOF
 
     - name: Monitor Production
@@ -72,12 +72,14 @@ jobs:
         curl -f http://localhost:8000 || exit 1
         EOF
 
-    - name: Revert to Previous Version if Errors Occur
+    - name: Revert to Last Commit if Errors Occur
       if: failure()
       run: |
         ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
-        BACKUP_DIR="/home/ubuntu/actions-runner/_work/auto-deployment-demo/backup"
-        CURRENT_PRODUCTION="/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo"
-        latest_backup=$(ls -dt $BACKUP_DIR/production-* | head -1)
-        [ -d "$latest_backup" ] && rm -rf $CURRENT_PRODUCTION && cp -r "$latest_backup" $CURRENT_PRODUCTION || { echo "No backup found"; exit 1; }
+        cd /home/ubuntu/actions-runner/_work/auto-deployment-demo
+        echo "Reverting to last successful commit..."
+        git fetch origin
+        git reset --hard origin/master
+        npm ci
+        PORT=8000 npm start &
         EOF
