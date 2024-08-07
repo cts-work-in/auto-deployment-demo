@@ -49,11 +49,11 @@ jobs:
       run: |
         scp -i 'auto-deploy-demo.pem' auto-deployment-demo.tar.gz ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com:/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo.tar.gz
 
-    - name: Stop Existing Application
-      run: |
-        ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
-        sudo lsof -t -i:8000 | xargs -r sudo kill -9
-        EOF
+    # - name: Stop Existing Application
+    #   run: |
+    #     ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
+    #     pm2 stop all || true
+    #     EOF
 
     - name: Deploy Application
       run: |
@@ -63,7 +63,9 @@ jobs:
         rm auto-deployment-demo.tar.gz
         cd auto-deployment-demo
         npm ci
-        PORT=8000 npm start &
+        pm2 reload 0
+        pm2 log 0
+        # pm2 start index.js --name "auto-deployment-demo"
         EOF
 
     - name: Monitor Production
@@ -81,5 +83,5 @@ jobs:
         git fetch origin
         git reset --hard origin/master
         npm ci
-        PORT=8000 npm start &
+        pm2 start index.js --name "auto-deployment-demo"
         EOF
