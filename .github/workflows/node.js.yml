@@ -47,28 +47,28 @@ jobs:
 
     - name: Deploy to Production
       run: |
-        scp -C -i 'auto-deploy-demo.pem' auto-deployment-demo.tar.gz ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com:/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo.tar.gz
+        rsync -avz -e 'ssh -i auto-deploy-demo.pem' auto-deployment-demo.tar.gz ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com:/home/ubuntu/actions-runner/_work/auto-deployment-demo/
         ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
         cd /home/ubuntu/actions-runner/_work/auto-deployment-demo
         tar -xzf auto-deployment-demo.tar.gz
         rm auto-deployment-demo.tar.gz
-
         # Check if node_modules directory exists
         if [ -d "auto-deployment-demo/node_modules" ]; then
-          echo "node_modules directory exists, running npm ci"
-          cd auto-deployment-demo
-          npm ci
-        else
-          echo "node_modules directory does not exist, running npm install"
-          cd auto-deployment-demo
-          npm install
-        fi
-        
-        # pm2 stop all || true
-        # pm2 start index.js --name "auto-deployment-demo"
-        pm2 reload 0
-        pm2 log 0
-        EOF
+            echo "node_modules directory exists, running npm ci"
+            cd auto-deployment-demo
+            npm ci
+          else
+            echo "node_modules directory does not exist, running npm install"
+            cd auto-deployment-demo
+            npm install
+          fi
+      
+          pm2 status
+          pm2 reload 0
+          # pm2 log 0
+          pm2 status
+          EOF
+
 
     - name: Monitor Production
       run: |
