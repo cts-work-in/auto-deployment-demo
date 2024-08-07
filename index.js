@@ -25,7 +25,7 @@ const authRouter = require('./src/Routes/authRoutes.jsx');
 const userRouter = require('./src/Routes/userRoutes.jsx');
 
 // Use Routes
-app.use('/auth', authRouter);
+app.use('/auth', authRouters);
 app.use('/user', userRouter);
 
 app.get('/',async (req, res)=>{
