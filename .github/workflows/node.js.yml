@@ -32,40 +32,17 @@ jobs:
         echo "${{ secrets.PEM_FILE_BASE64 }}" | base64 --decode > auto-deploy-demo.pem
         chmod 600 auto-deploy-demo.pem
 
-    - name: Create Archive
-      run: |
-        mkdir temp-deploy
-        rsync -av --exclude='temp-deploy' ./ temp-deploy/
-        tar -czf auto-deployment-demo.tar.gz -C temp-deploy . || { echo "Failed to create archive"; exit 1; }
-        rm -rf temp-deploy
-
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: deployment-archive
-        path: auto-deployment-demo.tar.gz
-
     - name: Deploy to Production
-      run: |
-        scp -i 'auto-deploy-demo.pem' auto-deployment-demo.tar.gz ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com:/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo.tar.gz
-
-    # - name: Stop Existing Application
-    #   run: |
-    #     ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
-    #     pm2 stop all || true
-    #     EOF
-
-    - name: Deploy Application
       run: |
         ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
         cd /home/ubuntu/actions-runner/_work/auto-deployment-demo
-        tar -xzf auto-deployment-demo.tar.gz
-        rm auto-deployment-demo.tar.gz
-        cd auto-deployment-demo
+        git fetch origin
+        git reset --hard origin/master
         npm ci
+        # pm2 stop all || true
+        # pm2 start index.js --name "auto-deployment-demo"
         pm2 reload 0
         pm2 log 0
-        # pm2 start index.js --name "auto-deployment-demo"
         EOF
 
     - name: Monitor Production
@@ -74,14 +51,17 @@ jobs:
         curl -f http://localhost:8000 || exit 1
         EOF
 
-    - name: Revert to Last Commit if Errors Occur
+    - name: Revert to Previous Stable Commit if Errors Occur
       if: failure()
       run: |
         ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
         cd /home/ubuntu/actions-runner/_work/auto-deployment-demo
-        echo "Reverting to last successful commit..."
+        echo "Reverting to previous stable commit..."
         git fetch origin
-        git reset --hard origin/master
+        git reset --hard origin/master@{1} # Revert to the previous commit
         npm ci
-        pm2 start index.js --name "auto-deployment-demo"
+        # pm2 stop all || true
+        # pm2 start index.js --name "auto-deployment-demo"
+        pm2 reload 0
+        pm2 log 0
         EOF
