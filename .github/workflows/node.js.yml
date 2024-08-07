@@ -52,23 +52,20 @@ jobs:
         cd /home/ubuntu/actions-runner/_work/auto-deployment-demo
         tar -xzf auto-deployment-demo.tar.gz
         rm auto-deployment-demo.tar.gz
-        # Check if node_modules directory exists
-        if [ -d "auto-deployment-demo/node_modules" ]; then
-            echo "node_modules directory exists, running npm ci"
-            cd auto-deployment-demo
-            npm ci
-          else
-            echo "node_modules directory does not exist, running npm install"
-            cd auto-deployment-demo
-            npm install
-          fi
-      
-          pm2 status
-          pm2 reload 0
-          # pm2 log 0
-          pm2 status
-          EOF
 
+        echo "Checking node_modules"
+        if [ -d "node_modules" ]; then
+            echo "node_modules directory exists, running npm ci"
+            npm ci
+        else
+            echo "node_modules directory does not exist, running npm install"
+            npm install
+        fi
+
+        echo "Reloading PM2"
+        pm2 reload 0 || pm2 start index.js --name "auto-deployment-demo"
+        pm2 status
+        EOF
 
     - name: Monitor Production
       run: |
@@ -85,8 +82,6 @@ jobs:
         git fetch origin
         git reset --hard origin/master@{1} # Revert to the previous commit
         npm ci
-        # pm2 stop all || true
-        # pm2 start index.js --name "auto-deployment-demo"
-        pm2 reload 0
-        pm2 log 0
+        pm2 reload 0 || pm2 start index.js --name "auto-deployment-demo"
+        pm2 status
         EOF
