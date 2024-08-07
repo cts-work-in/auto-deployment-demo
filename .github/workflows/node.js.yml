@@ -23,6 +23,9 @@ jobs:
 
     - run: npm ci
 
+    - name: Run Tests
+      run: npm test
+
     - name: Set up .env
       run: |
         echo "${{ secrets.PROD_ENV_FILE }}" | base64 --decode > .env
@@ -32,12 +35,24 @@ jobs:
         echo "${{ secrets.PEM_FILE_BASE64 }}" | base64 --decode > auto-deploy-demo.pem
         chmod 600 auto-deploy-demo.pem
 
+    - name: Create Archive
+      run: |
+        git archive -o auto-deployment-demo.tar.gz HEAD
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: deployment-archive
+        path: auto-deployment-demo.tar.gz
+
     - name: Deploy to Production
       run: |
+        scp -i 'auto-deploy-demo.pem' auto-deployment-demo.tar.gz ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com:/home/ubuntu/actions-runner/_work/auto-deployment-demo/auto-deployment-demo.tar.gz
         ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
         cd /home/ubuntu/actions-runner/_work/auto-deployment-demo
-        git fetch origin
-        git reset --hard origin/master
+        tar -xzf auto-deployment-demo.tar.gz
+        rm auto-deployment-demo.tar.gz
+        cd auto-deployment-demo
         npm ci
         # pm2 stop all || true
         # pm2 start index.js --name "auto-deployment-demo"
