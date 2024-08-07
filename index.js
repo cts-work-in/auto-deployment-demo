@@ -28,6 +28,9 @@ const userRouter = require('./src/Routes/userRoutes.jsx');
 app.use('/auth', authRouter);
 app.use('/user', userRouter);
 
+app.get('/',async (req, res)=>{
+    return res.status(200).send("Successfully running");
+})
 // PDF Conversion Endpoint
 app.post('/convert', async (req, res) => {
     const { data } = req.body;
