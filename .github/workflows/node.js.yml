@@ -70,7 +70,7 @@ jobs:
     - name: Monitor Production
       run: |
         ssh -i 'auto-deploy-demo.pem' ubuntu@ec2-65-0-193-48.ap-south-1.compute.amazonaws.com << 'EOF'
-        curl -f http://localhost:8000 || exit 1
+        curl -f http://65.0.193.48:8000 || exit 1
         EOF
 
     - name: Revert to Previous Stable Commit if Errors Occur
